@@ -1,47 +1,79 @@
 import express from 'express';
-import HTTP_CODES from './utils/httpCodes.mjs';
+import cors from 'cors'; // Importer cors-pakken
 
 const server = express();
 const port = (process.env.PORT || 8000);
 
 server.set('port', port);
+server.use(cors()); // Aktiver CORS for alle ruter
 server.use(express.static('public'));
+server.use(express.json()); // For å håndtere JSON i POST/PATCH
 
-function getRoot(req, res, next) {
-    res.status(HTTP_CODES.SUCCESS.OK).send('Hello World').end();
+// Data for kortstokker
+let decks = {}; // { deck_id: { cards: [array of cards], drawn: [array of drawn cards] } }
+
+// Hjelpefunksjon for å generere en kortstokk
+function generateDeck() {
+    const suits = ['hjerter', 'spar', 'ruter', 'kløver'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'knekt', 'dame', 'konge', 'ess'];
+    let deck = [];
+    for (let suit of suits) {
+        for (let value of values) {
+            deck.push(`${value}_${suit}`);
+        }
+    }
+    return deck;
 }
 
-server.get("/", getRoot);
-
-server.get("/tmp/poem", (req, res) => {
-    const poem = `
-        Roses are red,
-        Violets are blue,
-        Sugar is sweet,
-        And so are you.
-    `;
-    res.status(HTTP_CODES.SUCCESS.OK).send(poem).end();
+// POST /temp/deck
+server.post('/temp/deck', (req, res) => {
+    const deck_id = Date.now().toString(); // Bruker tidsstempel som unik ID
+    const deck = generateDeck();
+    decks[deck_id] = { cards: deck, drawn: [] };
+    res.status(200).json({ deck_id });
 });
 
-server.get("/tmp/quote", (req, res) => {
-    const quotes = [
-        "The only limit to our realization of tomorrow is our doubts of today. - Franklin D. Roosevelt",
-        "Do what you can, with what you have, where you are. - Theodore Roosevelt",
-        "The best way to predict the future is to invent it. - Alan Kay",
-        "Life is 10% what happens to us and 90% how we react to it. - Charles R. Swindoll",
-        "Success is not final, failure is not fatal: It is the courage to continue that counts. - Winston Churchill"
-    ];
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-    res.status(HTTP_CODES.SUCCESS.OK).send(randomQuote).end();
+// PATCH /temp/deck/shuffle/:deck_id
+server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
+    const deck_id = req.params.deck_id;
+    if (!decks[deck_id]) {
+        return res.status(404).json({ error: 'Kortstokk ikke funnet' });
+    }
+    const deck = decks[deck_id];
+    deck.cards = [...deck.cards, ...deck.drawn]; // Legg tilbake trukkede kort
+    deck.drawn = [];
+    // Stokker kortstokken
+    for (let i = deck.cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck.cards[i], deck.cards[j]] = [deck.cards[j], deck.cards[i]];
+    }
+    res.status(200).json({ message: 'Kortstokken er stokket' });
 });
 
-server.post("/tmp/sum/:a/:b", (req, res) => {
-    const a = parseInt(req.params.a);
-    const b = parseInt(req.params.b);
-    const sum = a + b;
-    res.status(HTTP_CODES.SUCCESS.OK).send(`Summen av ${a} og ${b} er ${sum}`).end();
+// GET /temp/deck/:deck_id
+server.get('/temp/deck/:deck_id', (req, res) => {
+    const deck_id = req.params.deck_id;
+    if (!decks[deck_id]) {
+        return res.status(404).json({ error: 'Kortstokk ikke funnet' });
+    }
+    res.status(200).json({ cards: decks[deck_id].cards });
 });
 
-server.listen(server.get('port'), function () {
-    console.log('server running', server.get('port'));
+// GET /temp/deck/:deck_id/card
+server.get('/temp/deck/:deck_id/card', (req, res) => {
+    const deck_id = req.params.deck_id;
+    if (!decks[deck_id]) {
+        return res.status(404).json({ error: 'Kortstokk ikke funnet' });
+    }
+    const deck = decks[deck_id];
+    if (deck.cards.length === 0) {
+        return res.status(400).json({ error: 'Ingen kort igjen i kortstokken' });
+    }
+    const card = deck.cards.pop(); // Trekker et kort
+    deck.drawn.push(card); // Legger til i trukkede kort
+    res.status(200).json({ card });
+});
+
+server.listen(server.get('port'), () => {
+    console.log('Server running on port', server.get('port'));
 });
