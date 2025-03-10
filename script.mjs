@@ -1,18 +1,27 @@
 import express from 'express';
-import cors from 'cors'; // Importer cors-pakken
+import cors from 'cors'; // Importer cors
+import session from 'express-session'
 
 const server = express();
 const port = (process.env.PORT || 8000);
 
+// session middleware
+server.use(session({
+    secret: 'Enferno7970', // nøkkel for å signere session ID
+    resave: false, // Unngå å lagre session hvis den ikke er endret
+    saveUninitialized: true, // lagre nye sessions selv om de ikke er endret
+    cookie: { secure: false } // true hvis man bruker HTTPS
+}));
+
 server.set('port', port);
-server.use(cors()); // Aktiver CORS for alle ruter
+server.use(cors()); // Aktiver cors
 server.use(express.static('public'));
-server.use(express.json()); // For å håndtere JSON i POST/PATCH
+server.use(express.json()); 
 
-// Data for kortstokker
-let decks = {}; // { deck_id: { cards: [array of cards], drawn: [array of drawn cards] } }
 
-// Hjelpefunksjon for å generere en kortstokk
+let decks = {}; 
+
+// generere en kortstokk
 function generateDeck() {
     const suits = ['hjerter', 'spar', 'ruter', 'kløver'];
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'knekt', 'dame', 'konge', 'ess'];
@@ -25,7 +34,7 @@ function generateDeck() {
     return deck;
 }
 
-// POST /temp/deck
+
 server.post('/temp/deck', (req, res) => {
     const deck_id = Date.now().toString(); // Bruker tidsstempel som unik ID
     const deck = generateDeck();
@@ -33,7 +42,7 @@ server.post('/temp/deck', (req, res) => {
     res.status(200).json({ deck_id });
 });
 
-// PATCH /temp/deck/shuffle/:deck_id
+
 server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
     const deck_id = req.params.deck_id;
     if (!decks[deck_id]) {
@@ -50,7 +59,7 @@ server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
     res.status(200).json({ message: 'Kortstokken er stokket' });
 });
 
-// GET /temp/deck/:deck_id
+
 server.get('/temp/deck/:deck_id', (req, res) => {
     const deck_id = req.params.deck_id;
     if (!decks[deck_id]) {
@@ -59,7 +68,7 @@ server.get('/temp/deck/:deck_id', (req, res) => {
     res.status(200).json({ cards: decks[deck_id].cards });
 });
 
-// GET /temp/deck/:deck_id/card
+
 server.get('/temp/deck/:deck_id/card', (req, res) => {
     const deck_id = req.params.deck_id;
     if (!decks[deck_id]) {
