@@ -18,6 +18,24 @@ server.use(cors()); // Aktiver cors
 server.use(express.static('public'));
 server.use(express.json()); 
 
+// POST /temp/session
+server.post('/temp/session', (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+        return res.status(400).json({ error: 'Brukernavn er påkrevd' });
+    }
+    req.session.username = username; // Lagre brukernavn i session
+    res.status(200).json({ message: 'Brukernavn lagret i session' });
+});
+
+// GET /temp/session
+server.get('/temp/session', (req, res) => {
+    const username = req.session.username;
+    if (!username) {
+        return res.status(404).json({ error: 'Ingen brukerdata funnet i session' });
+    }
+    res.status(200).json({ username });
+});
 
 let decks = {}; 
 
