@@ -1,7 +1,7 @@
 import express from 'express';
-import cors from 'cors'; // Importer cors
-import session from 'express-session'
-import pokerRouter from './pokerRouter.mjs'; // Importer poker-routeren
+import cors from 'cors'; 
+import session from 'express-session';
+import solitaireRouter from './solitaireRouter.mjs';
 
 const server = express();
 const port = (process.env.PORT || 8000);
@@ -40,8 +40,8 @@ server.get('/temp/session', (req, res) => {
 
 let decks = {}; 
 
-// generere en kortstokk
-function generateDeck() {
+// generere en kortstokk - beholder for bakoverkompatibilitet
+export function generateDeck() {
     const suits = ['hjerter', 'spar', 'ruter', 'kløver'];
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'knekt', 'dame', 'konge', 'ess'];
     let deck = [];
@@ -53,14 +53,23 @@ function generateDeck() {
     return deck;
 }
 
+// stokke kortstokken - beholder for bakoverkompatibilitet
+export function shuffleDeck(deck) {
+    const shuffled = [...deck];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
 
+// Beholder kortstokk-funksjonaliteten for bakoverkompatibilitet
 server.post('/temp/deck', (req, res) => {
     const deck_id = Date.now().toString(); // Bruker tidsstempel som unik ID
     const deck = generateDeck();
     decks[deck_id] = { cards: deck, drawn: [] };
     res.status(200).json({ deck_id });
 });
-
 
 server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
     const deck_id = req.params.deck_id;
@@ -71,13 +80,9 @@ server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
     deck.cards = [...deck.cards, ...deck.drawn]; // Legg tilbake trukkede kort
     deck.drawn = [];
     // Stokker kortstokken
-    for (let i = deck.cards.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck.cards[i], deck.cards[j]] = [deck.cards[j], deck.cards[i]];
-    }
+    deck.cards = shuffleDeck(deck.cards);
     res.status(200).json({ message: 'Kortstokken er stokket' });
 });
-
 
 server.get('/temp/deck/:deck_id', (req, res) => {
     const deck_id = req.params.deck_id;
@@ -86,7 +91,6 @@ server.get('/temp/deck/:deck_id', (req, res) => {
     }
     res.status(200).json({ cards: decks[deck_id].cards });
 });
-
 
 server.get('/temp/deck/:deck_id/card', (req, res) => {
     const deck_id = req.params.deck_id;
@@ -102,7 +106,8 @@ server.get('/temp/deck/:deck_id/card', (req, res) => {
     res.status(200).json({ card });
 });
 
-server.use('/poker', pokerRouter);
+// Bruk solitaire-routeren
+server.use('/api/solitaire', solitaireRouter);
 
 server.listen(server.get('port'), () => {
     console.log('Server running on port', server.get('port'));
