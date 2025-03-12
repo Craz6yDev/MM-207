@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors'; // Importer cors
 import session from 'express-session'
+import pokerRouter from './pokerRouter.mjs'; // Importer poker-routeren
 
 const server = express();
 const port = (process.env.PORT || 8000);
@@ -100,6 +101,13 @@ server.get('/temp/deck/:deck_id/card', (req, res) => {
     deck.drawn.push(card); // Legger til i trukkede kort
     res.status(200).json({ card });
 });
+
+server.listen(server.get('port'), () => {
+    console.log('Server running on port', server.get('port'));
+});
+
+// Bruk poker-routeren
+server.use('/poker', pokerRouter);
 
 server.listen(server.get('port'), () => {
     console.log('Server running on port', server.get('port'));
