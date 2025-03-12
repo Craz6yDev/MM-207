@@ -102,11 +102,6 @@ server.get('/temp/deck/:deck_id/card', (req, res) => {
     res.status(200).json({ card });
 });
 
-server.listen(server.get('port'), () => {
-    console.log('Server running on port', server.get('port'));
-});
-
-// Bruk poker-routeren
 server.use('/poker', pokerRouter);
 
 server.listen(server.get('port'), () => {
