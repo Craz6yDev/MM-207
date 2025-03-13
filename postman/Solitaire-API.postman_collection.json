@@ -1,0 +1,283 @@
+{
+	"info": {
+		"_postman_id": "8ccb9996-b5f7-4491-9c63-e92de3847b66",
+		"name": "New Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42994737"
+	},
+	"item": [
+		{
+			"name": "opprett nytt spill",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "draw",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/{gameId}/draw",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"{gameId}",
+						"draw"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "save",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"saveName\": \"MittSpill\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/:gameId/save",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						":gameId",
+						"save"
+					],
+					"variable": [
+						{
+							"key": "gameId",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Hent spilltilstand",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/1741817644000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"1741817644000"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "hent saves",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/saves",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"saves"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Slett save",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/saves/MittSpill",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"saves",
+						"MittSpill"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "flytt fra graveyard til foundation",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/1741899429322/graveyard-to-foundation/0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"1741899429322",
+						"graveyard-to-foundation",
+						"0"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "flytt fra graveyard til board",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/1741899429322/graveyard-to-board/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"1741899429322",
+						"graveyard-to-board",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "flytt fra board til board",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/1741899429322/board-to-board/1/1/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"1741899429322",
+						"board-to-board",
+						"1",
+						"1",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "flytt fra board til foundation",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/solitaire/games/1741899429322/board-to-foundation/1/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"solitaire",
+						"games",
+						"1741899429322",
+						"board-to-foundation",
+						"1",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
