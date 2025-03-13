@@ -1,3 +1,6 @@
+server.get('/', (req, res) => {
+    res.redirect('/solitaire.html');
+  });
 import express from 'express';
 import cors from 'cors'; 
 import session from 'express-session';
