@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kortstokk-klient</title>
+</head>
+<body>
+    <h1>Kortstokk-klient</h1>
+    <button id="createDeck">Opprett kortstokk</button>
+    <button id="shuffleDeck">Stokke kortstokk</button>
+    <button id="drawCard">Trekk kort</button>
+    <div id="output"></div>
+
+    <script>
+        let deck_id = null;
+
+        // Opprett kortstokk
+        document.getElementById('createDeck').addEventListener('click', async () => {
+            const response = await fetch('http://localhost:8000/temp/deck', { method: 'POST' });
+            const data = await response.json();
+            deck_id = data.deck_id;
+            document.getElementById('output').innerText = `Kortstokk opprettet med ID: ${deck_id}`;
+        });
+
+        // Stokke kortstokk
+        document.getElementById('shuffleDeck').addEventListener('click', async () => {
+            if (!deck_id) {
+                alert('Opprett en kortstokk først!');
+                return;
+            }
+            const response = await fetch(`/temp/deck/shuffle/${deck_id}`, { method: 'PATCH' });
+            const data = await response.json();
+            document.getElementById('output').innerText = data.message;
+        });
+
+        // Trekk kort
+        document.getElementById('drawCard').addEventListener('click', async () => {
+            if (!deck_id) {
+                alert('Opprett en kortstokk først!');
+                return;
+            }
+            const response = await fetch(`/temp/deck/${deck_id}/card`);
+            const data = await response.json();
+            if (response.status === 200) {
+                document.getElementById('output').innerText = `Du trakk: ${data.card}`;
+            } else {
+                document.getElementById('output').innerText = data.error;
+            }
+        });
+    </script>
+</body>
+</html>
