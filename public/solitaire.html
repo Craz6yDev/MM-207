@@ -289,37 +289,49 @@
         }
         
         async function moveToFoundation(foundationIndex) {
-            if (!gameId) return;
+    if (!gameId) return;
+    
+    log("Forsøker å flytte til foundation", { foundationIndex, selectedPile });
+
+    // Hvis ingen kort er valgt, gjør ingenting
+    if (!selectedPile) {
+        log("Ingen kort valgt for flytting til foundation", {});
+        return;
+    }
+    
+    // Hvis et kort er valgt fra board
+    if (selectedPile && selectedPile.startsWith('board-')) {
+        const boardIndex = parseInt(selectedPile.split('-')[1]);
+        clearSelection();
+        await moveBoardToFoundation(boardIndex, foundationIndex);
+        return;
+    }
+    
+    // Hvis et kort er valgt fra graveyard
+    if (selectedPile === 'graveyard'){
+        clearSelection();
+        
+        try {
+            const response = await fetch(`/api/solitaire/games/${gameId}/graveyard-to-foundation/${foundationIndex}`, {
+                method: 'POST'
+            });
             
-            log("Forsøker å flytte til foundation", { foundationIndex, selectedPile });
-            
-            if (selectedPile && selectedPile.startsWith('board-')) {
-                const boardIndex = parseInt(selectedPile.split('-')[1]);
-                await moveBoardToFoundation(boardIndex, foundationIndex);
-                return;
+            if (!response.ok) {
+                throw new Error('Kunne ikke flytte kort');
             }
             
-            try {
-                const response = await fetch(`/api/solitaire/games/${gameId}/graveyard-to-foundation/${foundationIndex}`, {
-                    method: 'POST'
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Kunne ikke flytte kort');
-                }
-                
-                const data = await response.json();
-                log("Flyttet fra graveyard til foundation", data);
-                
-                if (data.success) {
-                    await refreshGameState();
-                }
-                
-            } catch (error) {
-                console.error('Feil ved flytting til foundation:', error);
-                log("Feil ved flytting", { error: error.message });
+            const data = await response.json();
+            log("Flyttet fra graveyard til foundation", data);
+            
+            if (data.success) {
+                await refreshGameState();
             }
+        } catch (error) {
+            console.error('Feil ved flytting til foundation:', error);
+            log("Feil ved flytting", { error: error.message });
         }
+    }
+}
         
         async function moveBoardToFoundation(boardIndex, foundationIndex) {
             try {
@@ -406,6 +418,7 @@
             
             // Hvis kortet kommer fra graveyard
             if (selectedPile === 'graveyard') {
+                clearSelection();
                 await moveGraveyardToBoard(toIndex);
                 return;
             }
@@ -413,8 +426,20 @@
             // Hvis kortet kommer fra et annet board
             if (selectedPile.startsWith('board-')) {
                 const fromIndex = parseInt(selectedPile.split('-')[1]);
-                await moveBoardToBoard(fromIndex, toIndex, selectedIndex);
+                if(fromIndex === toIndex){
+                    clearSelection();
+                    return;
+                }
+                const fromBoardIndex = fromIndex;
+                const fromCardIndex = selectedIndex;
+                
+                clearSelection();
+                
+                await moveBoardToBoard(fromBoardIndex, toIndex, fromCardIndex);
+                
             }
+
+            
         }
         
         async function moveGraveyardToBoard(boardIndex) {
@@ -469,11 +494,7 @@
         
         function selectGraveyardCard() {
             log("Velger kort fra graveyard", {});
-            
-            // Fjern tidligere utvalg
-            if (selectedCard) {
-                selectedCard.classList.remove('selected');
-            }
+            clearSelection();
             
             const graveyardContainer = document.getElementById('graveyard');
             const topCard = graveyardContainer.querySelector('.card');
