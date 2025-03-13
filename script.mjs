@@ -21,6 +21,14 @@ server.use(express.static('public'));
 server.use(express.json()); 
 server.use(express.urlencoded({extended: true}));
 server.use('/api/solitaire', solitaireRouter);
+server.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Service-Worker-Allowed', '/');
+        }
+    }
+}));
+
 
 server.use((err, req, res, next) => {
     console.error('Uventet feil:', err);

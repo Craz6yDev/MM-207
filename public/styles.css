@@ -1,0 +1,151 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.game-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #358754;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.top-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.library-graveyard {
+    display: flex;
+    gap: 20px;
+}
+
+.library, .graveyard, .foundation-pile {
+    width: 80px;
+    height: 120px;
+    border: 2px dashed white;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.foundation {
+    display: flex;
+    gap: 10px;
+}
+
+.board {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.board-pile {
+    min-height: 400px;
+    width: 80px;
+    border: 2px dashed white;
+    border-radius: 5px;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.card {
+    width: 80px;
+    height: 120px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: white;
+    position: absolute;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    top: 0;
+    left: 0;
+}
+
+.card-red {
+    color: #d40000;
+}
+
+.card-black {
+    color: #000000;
+}
+
+.card-back {
+    background-color: steelblue;
+    border: 1px solid #2c5170;
+}
+
+.selected {
+    box-shadow: 0 0 10px 3px gold;
+}
+
+.controls {
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+.info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: white;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#debug {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 10px;
+    max-width: 100%;
+    max-height: 200px;
+    overflow: auto;
+    font-family: monospace;
+}
+

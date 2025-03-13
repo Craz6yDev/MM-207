@@ -1,0 +1,21 @@
+{
+    "name": "Solitaire Web App",
+    "short_name": "Solitaire",
+    "description": "Classic Solitaire game as a Progressive Web App",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#358754",
+    "theme_color": "#358754",
+    "icons": [
+        {
+            "src": "/icons/icon-225x225.png",
+            "sizes": "225x225",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-600x600.png", 
+            "sizes": "600x600",
+            "type": "image/png"
+        }
+    ]
+}
