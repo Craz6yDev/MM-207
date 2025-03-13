@@ -5,18 +5,14 @@ import { SolitaireGame } from './solitaireTypes.mjs';
 
 const router = express.Router();
 
-// Lagring av solitaire-spill
 let solitaireGames = {};
 
 // Opprett et nytt spill
 router.post('/games', (req, res) => {
     const gameId = Date.now().toString();
     const game = new SolitaireGame(gameId);
-    
-    // Generer og stokk kortstokken
     const deck = shuffleDeck(generateDeck());
     
-    // Initialiser spillet
     game.init(deck);
     
     // Lagre spillet
@@ -37,7 +33,6 @@ router.post('/games', (req, res) => {
     });
 });
 
-// Hent spilltilstand
 router.get('/games/:gameId', (req, res) => {
     const gameId = req.params.gameId;
     const game = solitaireGames[gameId];
@@ -59,7 +54,6 @@ router.get('/games/:gameId', (req, res) => {
     });
 });
 
-// Trekk fra biblioteket
 router.post('/games/:gameId/draw', (req, res) => {
     const gameId = req.params.gameId;
     const game = solitaireGames[gameId];

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solitaire</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #358754;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .library-graveyard {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .library, .graveyard, .foundation-pile {
+            width: 80px;
+            height: 120px;
+            border: 2px dashed white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        .foundation {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .board {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        .board-pile {
+            min-height: 300px;
+            width: 80px;
+            border: 2px dashed white;
+            border-radius: 5px;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .card {
+            width: 80px;
+            height: 120px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            background-color: white;
+            position: absolute;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            top: 0;
+            left: 0;
+        }
+        
+        .card-red {
+            color: #d40000;
+        }
+        
+        .card-black {
+            color: #000000;
+        }
+        
+        .card-back {
+            background-color: steelblue;
+            border: 1px solid #2c5170;
+            
+        }
+        
+        .selected {
+            box-shadow: 0 0 10px 3px gold;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+        }
+        
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #debug {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            max-width: 100%;
+            max-height: 200px;
+            overflow: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Solitaire</h1>
+    
+    <div id="game-container" class="game-container">
+        <div class="info">
+            <div>Trekk: <span id="moves-count">0</span></div>
+            <div>Tid: <span id="timer">00:00</span></div>
+        </div>
+        
+        <div class="top-row">
+            <div class="library-graveyard">
+                <div id="library" class="library" onclick="drawCard()">
+                    <div class="card card-back"></div>
+                </div>
+                <div id="graveyard" class="graveyard"></div>
+            </div>
+            
+            <div class="foundation">
+                <div id="foundation-0" class="foundation-pile" onclick="moveToFoundation(0)"></div>
+                <div id="foundation-1" class="foundation-pile" onclick="moveToFoundation(1)"></div>
+                <div id="foundation-2" class="foundation-pile" onclick="moveToFoundation(2)"></div>
+                <div id="foundation-3" class="foundation-pile" onclick="moveToFoundation(3)"></div>
+            </div>
+        </div>
+        
+        <div id="board" class="board">
+            <div id="board-0" class="board-pile" onclick="moveToBoard(0)"></div>
+            <div id="board-1" class="board-pile" onclick="moveToBoard(1)"></div>
+            <div id="board-2" class="board-pile" onclick="moveToBoard(2)"></div>
+            <div id="board-3" class="board-pile" onclick="moveToBoard(3)"></div>
+            <div id="board-4" class="board-pile" onclick="moveToBoard(4)"></div>
+            <div id="board-5" class="board-pile" onclick="moveToBoard(5)"></div>
+            <div id="board-6" class="board-pile" onclick="moveToBoard(6)"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="new-game-btn" onclick="startNewGame()">Nytt spill</button>
+            <button id="debug-btn" onclick="toggleDebug()">Debug</button>
+        </div>
+    </div>
+    
+    <div id="debug" style="display: none;"></div>
+    
+    <script>
+        let gameId = null;
+        let selectedCard = null;
+        let selectedPile = null;
+        let selectedIndex = null;
+        let timerInterval = null;
+        let startTime = null;
+        let debugMode = false;
+        
+        // debug
+        function log(message, data) {
+            console.log(message, data);
+            if (debugMode) {
+                const debugElement = document.getElementById('debug');
+                const item = document.createElement('div');
+                item.textContent = `${message}: ${JSON.stringify(data)}`;
+                debugElement.prepend(item);
+                if (debugElement.children.length > 20) {
+                    debugElement.removeChild(debugElement.lastChild);
+                }
+            }
+        }
+        
+        function toggleDebug() {
+            debugMode = !debugMode;
+            document.getElementById('debug').style.display = debugMode ? 'block' : 'none';
+        }
+        
+        // Start et nytt spill ved lasting. Bare for å teste akkurat nu, fjern etterpå
+        window.onload = startNewGame;
+        
+        async function startNewGame() {
+            try {
+                log("Starter nytt spill", {});
+                const response = await fetch('/api/solitaire/games', {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke opprette spill');
+                }
+                
+                const data = await response.json();
+                log("Spill opprettet", { gameId: data.gameId });
+                gameId = data.gameId;
+                
+                // Reset utvalg
+                selectedCard = null;
+                selectedPile = null;
+                selectedIndex = null;
+                
+                // Reset timer
+                clearInterval(timerInterval);
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+                updateUI(data);
+                
+            } catch (error) {
+                console.error('Feil:', error);
+                alert('Feil: ' + error.message);
+            }
+        }
+        
+        async function drawCard() {
+            if (!gameId) return;
+            
+            try {
+                log("Trekker kort", { gameId });
+                const response = await fetch(`/api/solitaire/games/${gameId}/draw`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke trekke kort');
+                }
+                
+                const data = await response.json();
+                log("Kort trukket", data);
+                updateLibraryAndGraveyard(data);
+                updateMoves(data.moves);
+                
+            } catch (error) {
+                console.error('Feil ved trekking av kort:', error);
+                log("Feil ved trekking", { error: error.message });
+            }
+        }
+        
+        async function moveToFoundation(foundationIndex) {
+            if (!gameId) return;
+            
+            log("Forsøker å flytte til foundation", { foundationIndex, selectedPile });
+            
+            if (selectedPile && selectedPile.startsWith('board-')) {
+                const boardIndex = parseInt(selectedPile.split('-')[1]);
+                await moveBoardToFoundation(boardIndex, foundationIndex);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/solitaire/games/${gameId}/graveyard-to-foundation/${foundationIndex}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke flytte kort');
+                }
+                
+                const data = await response.json();
+                log("Flyttet fra graveyard til foundation", data);
+                
+                if (data.success) {
+                    await refreshGameState();
+                }
+                
+            } catch (error) {
+                console.error('Feil ved flytting til foundation:', error);
+                log("Feil ved flytting", { error: error.message });
+            }
+        }
+        
+        async function moveBoardToFoundation(boardIndex, foundationIndex) {
+            try {
+                log("Flytter fra board til foundation", { boardIndex, foundationIndex });
+                const response = await fetch(`/api/solitaire/games/${gameId}/board-to-foundation/${boardIndex}/${foundationIndex}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke flytte kort');
+                }
+                
+                const data = await response.json();
+                log("Resultat av flytting", data);
+                
+                if (data.success) {
+                    clearSelection();
+                    await refreshGameState();
+                }
+                
+            } catch (error) {
+                console.error('Feil ved flytting fra board til foundation:', error);
+                log("Feil ved flytting", { error: error.message });
+            }
+        }
+        
+        function selectBoardCard(boardIndex, cardIndex) {
+            log("Velger kort fra board", { boardIndex, cardIndex });
+            
+            // Fjern tidligere utvalg hvis et nytt kort velges
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+            
+            const boardPile = document.getElementById(`board-${boardIndex}`);
+            const cards = boardPile.querySelectorAll('.card');
+            
+            if (cardIndex < cards.length) {
+                selectedCard = cards[cardIndex];
+                selectedPile = `board-${boardIndex}`;
+                selectedIndex = cardIndex;
+                
+                // Visuell markering
+                selectedCard.classList.add('selected');
+                log("Kort valgt", { selectedPile, selectedIndex });
+            }
+        }
+        
+        async function moveToBoard(toIndex) {
+            if (!gameId) return;
+            
+            log("Forsøker å flytte til board", { toIndex, selectedPile, selectedIndex });
+            
+            if (!selectedPile) {
+                log("Ingen kort valgt", {});
+                return;
+            }
+            
+            // Hvis kortet kommer fra graveyard
+            if (selectedPile === 'graveyard') {
+                await moveGraveyardToBoard(toIndex);
+                return;
+            }
+            
+            // Hvis kortet kommer fra et annet board
+            if (selectedPile.startsWith('board-')) {
+                const fromIndex = parseInt(selectedPile.split('-')[1]);
+                await moveBoardToBoard(fromIndex, toIndex, selectedIndex);
+            }
+        }
+        
+        async function moveGraveyardToBoard(boardIndex) {
+            try {
+                log("Flytter fra graveyard til board", { boardIndex });
+                const response = await fetch(`/api/solitaire/games/${gameId}/graveyard-to-board/${boardIndex}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke flytte kort');
+                }
+                
+                const data = await response.json();
+                log("Resultat av flytting", data);
+                
+                if (data.success) {
+                    clearSelection();
+                    await refreshGameState();
+                }
+                
+            } catch (error) {
+                console.error('Feil ved flytting fra graveyard til board:', error);
+                log("Feil ved flytting", { error: error.message });
+            }
+        }
+        
+        async function moveBoardToBoard(fromIndex, toIndex, cardIndex) {
+            try {
+                log("Flytter fra board til board", { fromIndex, toIndex, cardIndex });
+                const response = await fetch(`/api/solitaire/games/${gameId}/board-to-board/${fromIndex}/${toIndex}/${cardIndex}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke flytte kort');
+                }
+                
+                const data = await response.json();
+                log("Resultat av flytting", data);
+                
+                if (data.success) {
+                    clearSelection();
+                    await refreshGameState();
+                }
+                
+            } catch (error) {
+                console.error('Feil ved flytting fra board til board:', error);
+                log("Feil ved flytting", { error: error.message });
+            }
+        }
+        
+        function selectGraveyardCard() {
+            log("Velger kort fra graveyard", {});
+            
+            // Fjern tidligere utvalg
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+            
+            const graveyardContainer = document.getElementById('graveyard');
+            const topCard = graveyardContainer.querySelector('.card');
+            
+            if (topCard) {
+                selectedCard = topCard;
+                selectedPile = 'graveyard';
+                selectedIndex = null;
+                
+                // Visuell markering
+                selectedCard.classList.add('selected');
+                log("Kort valgt fra graveyard", {});
+            }
+        }
+        
+        function clearSelection() {
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+            selectedCard = null;
+            selectedPile = null;
+            selectedIndex = null;
+            log("Valg fjernet", {});
+        }
+        
+        async function refreshGameState() {
+            if (!gameId) return;
+            
+            try {
+                log("Oppdaterer spilltilstand", { gameId });
+                const response = await fetch(`/api/solitaire/games/${gameId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Kunne ikke hente spilltilstand');
+                }
+                
+                const data = await response.json();
+                updateUI(data);
+                
+                // Sjekk om spillet er vunnet
+                if (data.status === 'completed') {
+                    clearInterval(timerInterval);
+                    setTimeout(() => {
+                        alert('Gratulerer! Du har vunnet spillet!');
+                    }, 500);
+                }
+                
+            } catch (error) {
+                console.error('Feil ved oppdatering av spilltilstand:', error);
+                log("Feil ved oppdatering", { error: error.message });
+            }
+        }
+        
+        function updateUI(gameData) {
+            log("Oppdaterer UI", { board: gameData.board ? gameData.board.length : 0 });
+            
+            // Oppdater trekk
+            updateMoves(gameData.moves);
+            
+            // Oppdater library og graveyard
+            updateLibraryAndGraveyard({
+                libraryCount: gameData.libraryCount,
+                graveyardTop: gameData.graveyardTop
+            });
+            
+            // Oppdater foundation
+            updateFoundation(gameData.foundation);
+            
+            // Oppdater board
+            updateBoard(gameData.board);
+        }
+        
+        function updateLibraryAndGraveyard(data) {
+            log("Oppdaterer library og graveyard", data);
+            const libraryContainer = document.getElementById('library');
+            const graveyardContainer = document.getElementById('graveyard');
+            
+            // Oppdater library
+            libraryContainer.innerHTML = '';
+            if (data.libraryCount > 0) {
+                const cardBack = document.createElement('div');
+                cardBack.className = 'card card-back';
+                libraryContainer.appendChild(cardBack);
+            }
+            
+            // Oppdater graveyard
+            graveyardContainer.innerHTML = '';
+            if (data.graveyardTop) {
+                const topCard = createCardElement(data.graveyardTop);
+                topCard.onclick = selectGraveyardCard;
+                graveyardContainer.appendChild(topCard);
+            }
+        }
+        
+        function updateFoundation(foundation) {
+            if (!foundation) return;
+            
+            log("Oppdaterer foundation", { count: foundation.length });
+            
+            foundation.forEach((pile, index) => {
+                const foundationContainer = document.getElementById(`foundation-${index}`);
+                foundationContainer.innerHTML = '';
+                
+                if (pile.length > 0) {
+                    const topCard = pile[pile.length - 1];
+                    const cardElement = createCardElement(topCard);
+                    foundationContainer.appendChild(cardElement);
+                }
+            });
+        }
+        
+        function updateBoard(board) {
+            if (!board) return;
+            
+            log("Oppdaterer board", { columns: board.length });
+            
+            board.forEach((pile, pileIndex) => {
+                const boardContainer = document.getElementById(`board-${pileIndex}`);
+                boardContainer.innerHTML = '';
+                
+                pile.forEach((card, cardIndex) => {
+                    const cardElement = createCardElement(card);
+                    cardElement.style.top = `${cardIndex * 25}px`;
+                    
+                    // Kun synlige kort kan klikkes
+                    if (card.visible) {
+                        cardElement.onclick = function(event) {
+                            event.stopPropagation(); // Viktig: Forhindrer at klikk går til container
+                            selectBoardCard(pileIndex, cardIndex);
+                        };
+                    }
+                    
+                    boardContainer.appendChild(cardElement);
+                });
+            });
+            
+            for (let i = 0; i < 7; i++) {
+                const boardContainer = document.getElementById(`board-${i}`);
+                if (boardContainer.children.length === 0) {
+                    boardContainer.onclick = function() {
+                        moveToBoard(i);
+                    };
+                }
+            }
+        }
+        
+        function createCardElement(cardData) {
+            const cardElement = document.createElement('div');
+            
+            if (!cardData.visible) {
+                cardElement.className = 'card card-back';
+                return cardElement;
+            }
+            
+            const [value, suit] = cardData.card.split('_');
+            const isRed = suit === 'hjerter' || suit === 'ruter';
+            cardElement.className = `card ${isRed ? 'card-red' : 'card-black'}`;
+            
+            let shortValue = value;
+            if (value === 'knekt') shortValue = 'J';
+            else if (value === 'dame') shortValue = 'Q';
+            else if (value === 'konge') shortValue = 'K';
+            else if (value === 'ess') shortValue = 'A';
+            
+            let suitSymbol = '';
+            if (suit === 'hjerter') suitSymbol = '♥';
+            else if (suit === 'ruter') suitSymbol = '♦';
+            else if (suit === 'kløver') suitSymbol = '♣';
+            else if (suit === 'spar') suitSymbol = '♠';
+            
+            cardElement.innerHTML = `
+                <div>${shortValue}<br>${suitSymbol}</div>
+            `;
+            
+            return cardElement;
+        }
+        
+        function updateMoves(moves) {
+            document.getElementById('moves-count').textContent = moves || 0;
+        }
+        
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>

@@ -40,7 +40,7 @@ server.get('/temp/session', (req, res) => {
 
 let decks = {}; 
 
-// generere en kortstokk - beholder for bakoverkompatibilitet
+// generere en kortstokk
 export function generateDeck() {
     const suits = ['hjerter', 'spar', 'ruter', 'kløver'];
     const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'knekt', 'dame', 'konge', 'ess'];
@@ -53,7 +53,7 @@ export function generateDeck() {
     return deck;
 }
 
-// stokke kortstokken - beholder for bakoverkompatibilitet
+// stokke kortstokken
 export function shuffleDeck(deck) {
     const shuffled = [...deck];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -63,7 +63,6 @@ export function shuffleDeck(deck) {
     return shuffled;
 }
 
-// Beholder kortstokk-funksjonaliteten for bakoverkompatibilitet
 server.post('/temp/deck', (req, res) => {
     const deck_id = Date.now().toString(); // Bruker tidsstempel som unik ID
     const deck = generateDeck();
