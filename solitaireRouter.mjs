@@ -7,6 +7,73 @@ const router = express.Router();
 
 let solitaireGames = {};
 
+router.post('/games/:gameId/save', (req, res) => {
+    console.log('Save route called');
+    console.log('Headers:', req.headers);
+    console.log('Game ID:', req.params.gameId);
+    console.log('Request body:', req.body);
+    
+    try {  
+        const gameId = req.params.gameId;
+        const { saveName } = req.body;
+            
+        if (!saveName) {
+            console.log('No save name provided');
+            return res.status(400).json({ 
+                error: 'Mangler navn på lagringen',
+                success: false
+            });
+        }
+
+        const game = solitaireGames[gameId];
+        if (!game) {
+            console.log('Game not found:', gameId);
+            return res.status(404).json({ 
+                error: 'Spill ikke funnet',
+                success: false 
+            });
+        }
+    
+        // Sikre at session eksisterer
+        if (!req.session) {
+            console.log('No session found');
+            return res.status(500).json({
+                error: 'Ingen session tilgjengelig',
+                success: false
+            });
+        }
+
+        req.session.savedGames = req.session.savedGames || {};
+        req.session.savedGames[saveName] = gameId;
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error', err);
+                return res.status(500).json({
+                    error: 'Kunne ikke lagre session',
+                    success: false
+                });
+            }
+
+            res.status(200).json({
+                message: 'Spill lagret',
+                saveName,
+                gameId,
+                success: true
+            });
+        });
+    } catch(error) {
+        console.error('Fullstendig feil:', error);
+        res.status(500).json({
+            error: 'Intern serverfeil',
+            success: false
+        });
+    }
+});
+    
+
+
+
 // Opprett et nytt spill
 router.post('/games', (req, res) => {
     const gameId = Date.now().toString();
@@ -182,6 +249,90 @@ router.post('/games/:gameId/board-to-board/:fromIndex/:toIndex/:cardIndex', (req
         board: game.board,
         moves: game.moves
     });
+});
+// Endepunkt for å lagre et spill med et navn
+router.post('/games/:gameId/save', (req, res) => {
+    try {  
+        const gameId = req.params.gameId;
+        const { saveName } = req.body;
+            
+        if (!saveName) {
+            return res.status(400).json({ 
+                error: 'Mangler navn på lagringen',
+                success: false
+            });
+        }
+
+        const game = solitaireGames[gameId];
+        if (!game) {
+            return res.status(404).json({ 
+                error: 'Spill ikke funnet',
+                success: false 
+            });
+        }
+    
+        req.session.savedGames = req.session.savedGames || {};
+        req.session.savedGames[saveName] = gameId;
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error', err);
+                return res.status(500).json({
+                    error: 'Kunne ikke lagre session',
+                    success: false
+                });
+            }
+
+            res.status(200).json({
+                message: 'Spill lagret',
+                saveName,
+                gameId,
+                success: true
+            });
+        });
+    } catch(error) {
+        console.error('Feil ved lagring:', error);
+        res.status(500).json({
+            error: 'Intern serverfeil',
+            success: false
+        });
+    }
+});
+    
+    // Lagre spillet under det oppgitt navn
+    //if (!req.session.savedGames) {
+    //    req.session.savedGames = {};
+   // }
+
+// Hent alle lagrede spill for denne brukeren
+router.get('/saves', (req, res) => {
+    if (!req.session.savedGames) {
+        return res.status(200).json({ saves: [] });
+    }
+    
+    const savedGames = Object.entries(req.session.savedGames).map(([name, id]) => {
+        return {
+            name,
+            id,
+            // Sjekk om spillet fortsatt eksisterer
+            exists: !!solitaireGames[id]
+        };
+    });
+    
+    res.status(200).json({ saves: savedGames });
+});
+
+// Slett et lagret spill
+router.delete('/saves/:saveName', (req, res) => {
+    const { saveName } = req.params;
+    
+    if (!req.session.savedGames || !req.session.savedGames[saveName]) {
+        return res.status(404).json({ error: 'Lagret spill ikke funnet' });
+    }
+    
+    delete req.session.savedGames[saveName];
+    
+    res.status(200).json({ message: 'Lagret spill slettet' });
 });
 
 export default router;

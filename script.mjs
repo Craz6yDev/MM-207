@@ -19,7 +19,16 @@ server.set('port', port);
 server.use(cors()); // Aktiver cors
 server.use(express.static('public'));
 server.use(express.json()); 
+server.use(express.urlencoded({extended: true}));
+server.use('/api/solitaire', solitaireRouter);
 
+server.use((err, req, res, next) => {
+    console.error('Uventet feil:', err);
+    res.status(500).json({
+        error: 'En uventet feil oppstod',
+        details: err.message
+    });
+});
 // POST /temp/session
 server.post('/temp/session', (req, res) => {
     const { username } = req.body;
