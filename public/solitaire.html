@@ -347,26 +347,52 @@
         }
         
         function selectBoardCard(boardIndex, cardIndex) {
-            log("Velger kort fra board", { boardIndex, cardIndex });
-            
-            // Fjern tidligere utvalg hvis et nytt kort velges
-            if (selectedCard) {
-                selectedCard.classList.remove('selected');
-            }
-            
-            const boardPile = document.getElementById(`board-${boardIndex}`);
-            const cards = boardPile.querySelectorAll('.card');
-            
-            if (cardIndex < cards.length) {
-                selectedCard = cards[cardIndex];
-                selectedPile = `board-${boardIndex}`;
-                selectedIndex = cardIndex;
-                
-                // Visuell markering
-                selectedCard.classList.add('selected');
-                log("Kort valgt", { selectedPile, selectedIndex });
-            }
+    log("Velger kort fra board", { boardIndex, cardIndex });
+    
+    const boardPile = document.getElementById(`board-${boardIndex}`);
+    const cards = boardPile.querySelectorAll('.card');
+    
+    // Sjekk om kortet er et lovlig valg
+    if (cardIndex >= cards.length || !cards[cardIndex].classList.contains('card')) {
+        return;
+    }
+    
+    // Sjekk om vi allerede har valgt et kort
+    if (selectedCard) {
+        const previousSelectedPile = selectedPile;
+        
+        // Hvis vi klikker på samme kolonne og samme kort, bare fjern utvalget
+        if (selectedPile === `board-${boardIndex}` && selectedIndex === cardIndex) {
+            clearSelection();
+            return;
         }
+        
+        // Hvis vi klikker på samme kolonne, men annet kort, oppdater utvalget
+        if (selectedPile === `board-${boardIndex}`) {
+            clearSelection();
+            selectedCard = cards[cardIndex];
+            selectedPile = `board-${boardIndex}`;
+            selectedIndex = cardIndex;
+            selectedCard.classList.add('selected');
+            return;
+        }
+        
+        // Ellers, forsøk å flytte kortet
+        if (selectedPile.startsWith('board-')) {
+            const fromIndex = parseInt(selectedPile.split('-')[1]);
+            moveBoardToBoard(fromIndex, boardIndex, selectedIndex);
+        } else if (selectedPile === 'graveyard') {
+            moveGraveyardToBoard(boardIndex);
+        }
+    } else {
+        // Ingen kort er valgt, velg dette
+        clearSelection();
+        selectedCard = cards[cardIndex];
+        selectedPile = `board-${boardIndex}`;
+        selectedIndex = cardIndex;
+        selectedCard.classList.add('selected');
+    }
+}
         
         async function moveToBoard(toIndex) {
             if (!gameId) return;
