@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logg inn - Solitaire</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Solitaire</h1>
+        
+        <a href="/" class="back-link">← Tilbake til spillet</a>
+        
+        <div class="auth-container" id="login-container">
+            <div class="error-message" id="login-error"></div>
+            <h2>Logg inn</h2>
+            <form class="auth-form" id="login-form">
+                <input type="text" id="login-username" placeholder="Brukernavn" required>
+                <input type="password" id="login-password" placeholder="Passord" required>
+                <button type="submit">Logg inn</button>
+            </form>
+            <div class="auth-switch">
+                Har du ikke en konto? <a onclick="showRegisterForm()">Registrer deg</a>
+            </div>
+        </div>
+        
+        <div class="auth-container" id="register-container" style="display: none;">
+            <div class="error-message" id="register-error"></div>
+            <h2>Registrer deg</h2>
+            <form class="auth-form" id="register-form">
+                <input type="text" id="register-username" placeholder="Brukernavn" required>
+                <input type="password" id="register-password" placeholder="Passord" required>
+                <input type="email" id="register-email" placeholder="E-post (valgfritt)">
+                <button type="submit">Registrer</button>
+            </form>
+            <div class="auth-switch">
+                Har du allerede en konto? <a onclick="showLoginForm()">Logg inn</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Show login form by default
+        function showLoginForm() {
+            document.getElementById('login-container').style.display = 'block';
+            document.getElementById('register-container').style.display = 'none';
+        }
+        
+        // Show register form
+        function showRegisterForm() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('register-container').style.display = 'block';
+        }
+        
+        // Handle login form submission
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorElement = document.getElementById('login-error');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Redirect to the game page
+                    window.location.href = '/';
+                } else {
+                    errorElement.textContent = data.error || 'Innlogging mislyktes';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                errorElement.textContent = 'En feil oppstod ved innlogging';
+                errorElement.style.display = 'block';
+            }
+        });
+        
+        // Handle register form submission
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const email = document.getElementById('register-email').value;
+            const errorElement = document.getElementById('register-error');
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Redirect to the game page after successful registration
+                    window.location.href = '/';
+                } else {
+                    errorElement.textContent = data.error || 'Registrering mislyktes';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error during registration:', error);
+                errorElement.textContent = 'En feil oppstod ved registrering';
+                errorElement.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
