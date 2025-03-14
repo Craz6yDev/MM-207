@@ -8,6 +8,15 @@ const router = express.Router();
 
 let solitaireGames = {};
 
+
+function logWithTimestamp(message, data = null) {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${message}`);
+    if (data) {
+        console.log(JSON.stringify(data, null, 2));
+    }
+}
+
 // Helper function to get or create user ID from session
 async function getOrCreateUser(sessionId) {
     try {
@@ -49,6 +58,7 @@ router.post('/games/:gameId/save', async (req, res) => {
 
         const game = solitaireGames[gameId];
         if (!game) {
+            logWithTimestamp(`Save attempt failed: Game ${gameId} not found`);
             return res.status(404).json({ 
                 error: 'Spill ikke funnet',
                 success: false 
@@ -57,6 +67,7 @@ router.post('/games/:gameId/save', async (req, res) => {
     
         // Ensure we have a session ID
         if (!req.session.id) {
+            logWithTimestamp('Save attempt failed: No valid session');
             return res.status(500).json({
                 error: 'Ingen gyldig session',
                 success: false
@@ -76,6 +87,47 @@ router.post('/games/:gameId/save', async (req, res) => {
             startTime: game.startTime,
             status: game.status
         };
+        
+        logWithTimestamp('Attempting to save game state', {
+            userId,
+            gameId,
+            saveName,
+            gameStateSize: JSON.stringify(gameState).length
+        });
+        // Use upsert pattern (insert or update)
+        const upsertQuery = `
+            INSERT INTO saved_games (game_id, user_id, save_name, game_state)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (user_id, save_name) 
+            DO UPDATE SET 
+                game_id = EXCLUDED.game_id,
+                game_state = EXCLUDED.game_state,
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING *
+        `;
+
+        const result = await pool.query(upsertQuery, [
+            gameId, 
+            userId, 
+            saveName, 
+            gameState
+        ]);
+
+        logWithTimestamp('Game saved successfully', {
+            savedGameId: result.rows[0].game_id,
+            saveName: result.rows[0].save_name
+        });
+        
+        res.status(200).json({
+            message: 'Game saved successfully',
+            saveName,
+            gameId,
+            success: true
+        });
+    
+        
+        
+        
         
         // Check if save already exists
         const checkResult = await pool.query(
@@ -101,12 +153,7 @@ router.post('/games/:gameId/save', async (req, res) => {
         req.session.savedGames = req.session.savedGames || {};
         req.session.savedGames[saveName] = gameId;
         
-        res.status(200).json({
-            message: 'Spill lagret',
-            saveName,
-            gameId,
-            success: true
-        });
+        
     } catch (error) {
         console.error('Feil ved lagring:', error);
         res.status(500).json({
