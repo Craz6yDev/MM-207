@@ -57,6 +57,22 @@
             <button id="load-game-btn" onclick="showLoadDialog()">Last inn </button>
             <button id="debug-btn" onclick="toggleDebug()">Debug</button>
         </div>
+        <div id="save-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 100;">
+            <h3>Lagre spill</h3>
+            <input type="text" id="save-name" placeholder="Navn på lagring">
+            <div class="dialog-buttons">
+                <button onclick="saveGame()">Lagre</button>
+                <button onclick="closeDialog('save-dialog')">Avbryt</button>
+            </div>
+        </div>
+        
+        <div id="load-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 100;">
+            <h3>Last inn spill</h3>
+            <div id="saved-games-list"></div>
+            <div class="dialog-buttons">
+                <button onclick="closeDialog('load-dialog')">Lukk</button>
+            </div>
+        </div>
     </div>
     
     <div id="debug" style="display: none;"></div>
