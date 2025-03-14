@@ -118,41 +118,19 @@ router.post('/games/:gameId/save', async (req, res) => {
             saveName: result.rows[0].save_name
         });
         
+         req.session.savedGames = req.session.savedGames || {};
+         req.session.savedGames[saveName] = gameId;
+            
+
         res.status(200).json({
             message: 'Game saved successfully',
             saveName,
             gameId,
             success: true
         });
+
+        
     
-        
-        
-        
-        
-        // Check if save already exists
-        const checkResult = await pool.query(
-            'SELECT game_id FROM saved_games WHERE user_id = $1 AND save_name = $2',
-            [userId, saveName]
-        );
-        
-        if (checkResult.rows.length > 0) {
-            // Update existing save
-            await pool.query(
-                'UPDATE saved_games SET game_state = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND save_name = $3',
-                [gameState, userId, saveName]
-            );
-        } else {
-            // Create new save
-            await pool.query(
-                'INSERT INTO saved_games (game_id, user_id, save_name, game_state) VALUES ($1, $2, $3, $4)',
-                [gameId, userId, saveName, gameState]
-            );
-        }
-        
-        // Also maintain the session reference for backward compatibility
-        req.session.savedGames = req.session.savedGames || {};
-        req.session.savedGames[saveName] = gameId;
-        
         
     } catch (error) {
         console.error('Feil ved lagring:', error);
