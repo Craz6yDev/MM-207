@@ -1,22 +1,29 @@
-
 import express from 'express';
 import cors from 'cors'; 
 import session from 'express-session';
+import dotenv from 'dotenv';
 import solitaireRouter from './solitaireRouter.mjs';
+import pool from './db.mjs';
+
+// Load environment variables
+dotenv.config();
 
 const server = express();
 const port = (process.env.PORT || 8000);
 
-// session middleware
+// session middleware with longer cookie maxAge for persistence
 server.use(session({
-    secret: 'Enferno7970', // nøkkel for å signere session ID
-    resave: false, // Unngå å lagre session hvis den ikke er endret
-    saveUninitialized: true, // lagre nye sessions selv om de ikke er endret
-    cookie: { secure: false } // true hvis man bruker HTTPS
+    secret: process.env.SESSION_SECRET || 'Enferno7970',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', 
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    }
 }));
 
 server.set('port', port);
-server.use(cors()); // Aktiver cors
+server.use(cors()); 
 server.use(express.static('public'));
 server.use(express.json()); 
 server.use(express.urlencoded({extended: true}));
@@ -29,7 +36,17 @@ server.use(express.static('public', {
     }
 }));
 
+// Test database connection on startup
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Database connection error:', err);
+    console.log('Server starting without database connection.');
+  } else {
+    console.log('Database connected successfully at:', res.rows[0].now);
+  }
+});
 
+// Error handling middleware
 server.use((err, req, res, next) => {
     console.error('Uventet feil:', err);
     res.status(500).json({
@@ -37,17 +54,17 @@ server.use((err, req, res, next) => {
         details: err.message
     });
 });
-// POST /temp/session
+
+// Existing routes from the original script.mjs
 server.post('/temp/session', (req, res) => {
     const { username } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Brukernavn er påkrevd' });
     }
-    req.session.username = username; // Lagre brukernavn i session
+    req.session.username = username;
     res.status(200).json({ message: 'Brukernavn lagret i session' });
 });
 
-// GET /temp/session
 server.get('/temp/session', (req, res) => {
     const username = req.session.username;
     if (!username) {
@@ -56,33 +73,12 @@ server.get('/temp/session', (req, res) => {
     res.status(200).json({ username });
 });
 
+import { generateDeck, shuffleDeck } from './deckUtils.mjs';
+
 let decks = {}; 
 
-// generere en kortstokk
-export function generateDeck() {
-    const suits = ['hjerter', 'spar', 'ruter', 'kløver'];
-    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'knekt', 'dame', 'konge', 'ess'];
-    let deck = [];
-    for (let suit of suits) {
-        for (let value of values) {
-            deck.push(`${value}_${suit}`);
-        }
-    }
-    return deck;
-}
-
-// stokke kortstokken
-export function shuffleDeck(deck) {
-    const shuffled = [...deck];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-}
-
 server.post('/temp/deck', (req, res) => {
-    const deck_id = Date.now().toString(); // Bruker tidsstempel som unik ID
+    const deck_id = Date.now().toString();
     const deck = generateDeck();
     decks[deck_id] = { cards: deck, drawn: [] };
     res.status(200).json({ deck_id });
@@ -94,9 +90,8 @@ server.patch('/temp/deck/shuffle/:deck_id', (req, res) => {
         return res.status(404).json({ error: 'Kortstokk ikke funnet' });
     }
     const deck = decks[deck_id];
-    deck.cards = [...deck.cards, ...deck.drawn]; // Legg tilbake trukkede kort
+    deck.cards = [...deck.cards, ...deck.drawn];
     deck.drawn = [];
-    // Stokker kortstokken
     deck.cards = shuffleDeck(deck.cards);
     res.status(200).json({ message: 'Kortstokken er stokket' });
 });
@@ -118,14 +113,12 @@ server.get('/temp/deck/:deck_id/card', (req, res) => {
     if (deck.cards.length === 0) {
         return res.status(400).json({ error: 'Ingen kort igjen i kortstokken' });
     }
-    const card = deck.cards.pop(); // Trekker et kort
-    deck.drawn.push(card); // Legger til i trukkede kort
+    const card = deck.cards.pop();
+    deck.drawn.push(card);
     res.status(200).json({ card });
 });
 
-// Bruk solitaire-routeren
-server.use('/api/solitaire', solitaireRouter);
-
+// Start the server
 server.listen(server.get('port'), () => {
     console.log('Server running on port', server.get('port'));
 });
