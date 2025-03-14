@@ -3,17 +3,6 @@ import express from 'express';
 import cors from 'cors'; 
 import session from 'express-session';
 import solitaireRouter from './solitaireRouter.mjs';
-import dotenv from 'dotenv';
-import { initializeDb } from './dbSetup.mjs';
-
-dotenv.config();
-
-initializeDb().then(() => {
-    console.log('Database initialized');
-}).catch(err => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-});
 
 const server = express();
 const port = (process.env.PORT || 8000);
@@ -48,15 +37,6 @@ server.use((err, req, res, next) => {
         details: err.message
     });
 });
-
-server.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
-});
-
-server.listen(server.get('port'), () => {
-    console.log('Server running on port', server.get('port'));
-});
-
 // POST /temp/session
 server.post('/temp/session', (req, res) => {
     const { username } = req.body;
