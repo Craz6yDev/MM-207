@@ -574,6 +574,137 @@
                 statusElement.remove();
             }, 3000);
         }
+        function showSaveDialog() {
+    document.getElementById('save-dialog').style.display = 'block';
+}
+
+function closeDialog(dialogId) {
+    document.getElementById(dialogId).style.display = 'none';
+}
+
+async function saveGame() {
+    if (!gameId) {
+        alert('Ingen aktivt spill å lagre');
+        return;
+    }
+    
+    const saveName = document.getElementById('save-name').value.trim();
+    
+    if (!saveName) {
+        alert('Vennligst skriv inn et navn for lagringen');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/solitaire/games/${gameId}/save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ saveName })
+        });
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        const responseText = await response.text();
+        console.log('Full response text:', responseText);
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Kunne ikke parse JSON:', parseError);
+            throw new Error('Ugyldig server-respons');
+        }
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Kunne ikke lagre spillet');
+        }
+        
+        alert(`Spill lagret som "${saveName}"`);
+        closeDialog('save-dialog');
+        
+    } catch (error) {
+        alert(`Feil: ${error.message}`);
+    }
+}
+
+function showLoadDialog() {
+    loadSavedGames();
+    document.getElementById('load-dialog').style.display = 'block';
+}
+
+async function loadSavedGames() {
+    try {
+        const response = await fetch('/api/solitaire/saves');
+        
+        if (!response.ok) {
+            throw new Error('Kunne ikke hente lagrede spill');
+        }
+        
+        const data = await response.json();
+        const savedGamesList = document.getElementById('saved-games-list');
+        savedGamesList.innerHTML = '';
+        
+        if (data.saves.length === 0) {
+            savedGamesList.innerHTML = '<p>Ingen lagrede spill funnet</p>';
+            return;
+        }
+        
+        data.saves.forEach(save => {
+            const saveItem = document.createElement('div');
+            saveItem.className = 'save-item';
+            saveItem.style.padding = '10px';
+            saveItem.style.margin = '5px 0';
+            saveItem.style.backgroundColor = save.exists ? '#e0f7e0' : '#f7e0e0';
+            saveItem.style.borderRadius = '5px';
+            
+            saveItem.innerHTML = `
+                <span>${save.name}</span>
+                <div class="save-buttons" style="float: right;">
+                    ${save.exists ? `<button onclick="loadGame('${save.id}')">Last inn</button>` : '<span>Ikke tilgjengelig</span>'}
+                    <button onclick="deleteSave('${save.name}')">Slett</button>
+                </div>
+            `;
+            
+            savedGamesList.appendChild(saveItem);
+        });
+        
+    } catch (error) {
+        console.error('Feil ved lasting av lagrede spill:', error);
+        document.getElementById('saved-games-list').innerHTML = `<p>Feil: ${error.message}</p>`;
+    }
+}
+
+async function loadGame(id) {
+    try {
+        gameId = id;
+        await refreshGameState();
+        closeDialog('load-dialog');
+        showStatus('Spill lastet inn!');
+    } catch (error) {
+        alert(`Feil: ${error.message}`);
+    }
+}
+
+async function deleteSave(saveName) {
+    try {
+        const response = await fetch(`/api/solitaire/saves/${saveName}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Kunne ikke slette lagringen');
+        }
+        
+        // Oppdater listen over lagrede spill
+        await loadSavedGames();
+        
+    } catch (error) {
+        alert(`Feil: ${error.message}`);
+    }
+}
     </script>
 </body>
 </html>
