@@ -1,5 +1,5 @@
 
-
+import * as db from './solitaireDb.mjs';
 export class SolitaireGame {
     constructor(id) {
         this.id = id;
@@ -12,7 +12,7 @@ export class SolitaireGame {
         this.status = 'active';
     }
     
-    init(deck) {
+   async init(deck) {
         // Kopier kortstokken
         const deckCopy = [...deck];
         
@@ -32,15 +32,33 @@ export class SolitaireGame {
         
         // Resten av kortene går til library
         this.library = deckCopy.map(card => ({ card, visible: false }));
+
+        // Save initial state to database
+        await db.createGame(this.id, this.status);
+        await this.saveToDb();
     }
     
+    async saveToDb() {
+        return db.saveGameState({
+            id: this.id,
+            status: this.status,
+            moves: this.moves,
+            startTime: this.startTime,
+            library: this.library,
+            graveyard: this.graveyard,
+            board: this.board,
+            foundation: this.foundation
+        });
+    }
+
     // fra library til graveyard
-    drawFromLibrary() {
+   async drawFromLibrary() {
         if (this.library.length === 0) {
             if (this.graveyard.length > 0) {
                 this.library = [...this.graveyard].reverse();
                 this.graveyard = [];
                 this.library.forEach(card => card.visible = false);
+                await this.saveToDb();
                 return true;
             }
             return false;
@@ -50,18 +68,22 @@ export class SolitaireGame {
         card.visible = true;
         this.graveyard.push(card);
         this.moves++;
+        await db.incrementMoves(this.id);
+        await this.saveToDb();
         return true;
     }
     
     // Flytt kort fra graveyard til foundation
-    moveGraveyardToFoundation(foundationIndex) {
+   async moveGraveyardToFoundation(foundationIndex) {
         if (this.graveyard.length === 0) return false;
         
         const card = this.graveyard[this.graveyard.length - 1];
         if (this.canAddToFoundation(card.card, foundationIndex)) {
             this.foundation[foundationIndex].push(this.graveyard.pop());
             this.moves++;
+            await db.incrementMoves(this.id);
             this.checkWinCondition();
+            await this.saveToDb();
             return true;
         }
         
@@ -69,13 +91,15 @@ export class SolitaireGame {
     }
     
     // Flytt kort fra graveyard til board
-    moveGraveyardToBoard(boardIndex) {
+   async moveGraveyardToBoard(boardIndex) {
         if (this.graveyard.length === 0) return false;
         
         const card = this.graveyard[this.graveyard.length - 1];
         if (this.canAddToBoard(card.card, boardIndex)) {
             this.board[boardIndex].push(this.graveyard.pop());
             this.moves++;
+            await db.incrementMoves(this.id);
+            await this.saveToDb();
             return true;
         }
         
@@ -83,7 +107,7 @@ export class SolitaireGame {
     }
     
     // Flytt kort fra board til foundation
-    moveBoardToFoundation(boardIndex, foundationIndex) {
+   async moveBoardToFoundation(boardIndex, foundationIndex) {
         const boardStack = this.board[boardIndex];
         if (boardStack.length === 0) return false;
         
@@ -99,7 +123,9 @@ export class SolitaireGame {
             }
             
             this.moves++;
+            await db.incrementMoves(this.id);
             this.checkWinCondition();
+            await this.saveToDb();
             return true;
         }
         
@@ -107,7 +133,7 @@ export class SolitaireGame {
     }
     
     // Flytt kort fra board til board
-    moveBoardToBoard(fromIndex, toIndex, cardIndex) {
+   async moveBoardToBoard(fromIndex, toIndex, cardIndex) {
         const fromStack = this.board[fromIndex];
         
         if (fromStack.length === 0 || cardIndex >= fromStack.length) return false;
@@ -125,6 +151,8 @@ export class SolitaireGame {
             }
             
             this.moves++;
+            await db.incrementMoves(this.id);
+            await this.saveToDb();
             return true;
         } else {
             // Legg kortene tilbake hvis de ikke kan flyttes
